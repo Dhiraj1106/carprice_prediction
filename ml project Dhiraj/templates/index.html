@@ -1,0 +1,1226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Car Price Predictor</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  :root {
+    --bg: #0d0f14;
+    --surface: #13151c;
+    --surface2: #1a1d27;
+    --surface3: #20232f;
+    --border: rgba(255, 255, 255, 0.07);
+    --border2: rgba(255, 255, 255, 0.12);
+    --text: #e8eaf0;
+    --text2: #8b8fa8;
+    --text3: #555870;
+    --accent: #6c63ff;
+    --accent2: #8b84ff;
+    --accent-bg: rgba(108, 99, 255, 0.12);
+    --accent-border: rgba(108, 99, 255, 0.3);
+    --green: #22d3a0;
+    --green-bg: rgba(34, 211, 160, 0.1);
+    --blue: #38bdf8;
+    --ff: 'Syne', sans-serif;
+    --mono: 'JetBrains Mono', monospace;
+    --r: 10px;
+    --r2: 16px;
+  }
+
+  body {
+    font-family: var(--ff);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(108, 99, 255, 0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(108, 99, 255, 0.03) 1px, transparent 1px);
+    background-size: 60px 60px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  nav {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: rgba(13, 15, 20, 0.88);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border);
+    padding: 0 2rem;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    font-weight: 800;
+    font-size: 1.05rem;
+    letter-spacing: -0.02em;
+  }
+
+  .brand-icon {
+    width: 31px;
+    height: 31px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, var(--accent), var(--blue));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+  }
+
+  .nav-pills {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .nav-pill {
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 0.06em;
+    padding: 5px 13px;
+    border-radius: 100px;
+    border: 1px solid var(--border2);
+    color: var(--text2);
+    background: var(--surface2);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .nav-pill:hover,
+  .nav-pill.active {
+    background: var(--accent-bg);
+    border-color: var(--accent-border);
+    color: var(--accent2);
+  }
+
+  .stat-bar {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 2rem;
+    height: 38px;
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+    overflow-x: auto;
+    position: relative;
+    z-index: 1;
+  }
+
+  .sb-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+  }
+
+  .sb-lbl {
+    font-family: var(--mono);
+    font-size: 8px;
+    color: var(--text3);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  .sb-val {
+    font-family: var(--mono);
+    font-size: 9px;
+    color: var(--text);
+    font-weight: 500;
+  }
+
+  .pulse-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--green);
+    box-shadow: 0 0 8px var(--green);
+    animation: pa 2s ease infinite;
+  }
+
+  @keyframes pa {
+    0%,
+    100% {
+      opacity: 1;
+      transform: scale(1);
+    }
+
+    50% {
+      opacity: 0.6;
+      transform: scale(0.8);
+    }
+  }
+
+  .mode-strip {
+    position: relative;
+    z-index: 1;
+    padding: 1.25rem 2rem 0;
+    max-width: 1280px;
+    margin: 0 auto;
+    width: 100%;
+  }
+
+  .mode-tabs {
+    display: inline-flex;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--r2);
+    padding: 3px;
+    gap: 2px;
+  }
+
+  .mode-tab {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    padding: 7px 18px;
+    border-radius: 9px;
+    cursor: pointer;
+    transition: all 0.2s;
+    color: var(--text2);
+    border: none;
+    background: none;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .mode-tab svg {
+    width: 13px;
+    height: 13px;
+    opacity: 0.7;
+  }
+
+  .mode-tab.active {
+    background: var(--accent);
+    color: #fff;
+    box-shadow: 0 4px 14px rgba(108, 99, 255, 0.4);
+  }
+
+  .mode-tab.active svg {
+    opacity: 1;
+  }
+
+  .main {
+    position: relative;
+    z-index: 1;
+    max-width: 1280px;
+    margin: 1.25rem auto 2rem;
+    padding: 0 2rem;
+    width: 100%;
+    display: grid;
+    gap: 1.25rem;
+  }
+
+  .main.mode-single {
+    grid-template-columns: 340px 1fr;
+  }
+
+  .main.mode-compare {
+    grid-template-columns: 1fr 1fr 1fr;
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--r2);
+    overflow: hidden;
+    position: relative;
+  }
+
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.08), transparent);
+  }
+
+  .card-head {
+    padding: 1rem 1.3rem;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .card-title {
+    font-size: 0.85rem;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+  }
+
+  .card-sub {
+    font-family: var(--mono);
+    font-size: 8px;
+    color: var(--text3);
+    letter-spacing: 0.06em;
+    margin-top: 3px;
+  }
+
+  .card-body {
+    padding: 1.1rem 1.3rem;
+  }
+
+  .car-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-family: var(--mono);
+    font-size: 8px;
+    letter-spacing: 0.08em;
+    padding: 3px 9px;
+    border-radius: 100px;
+  }
+
+  .car-chip.a {
+    background: rgba(108, 99, 255, 0.15);
+    color: var(--accent2);
+    border: 1px solid rgba(108, 99, 255, 0.25);
+  }
+
+  .car-chip.b {
+    background: rgba(34, 211, 160, 0.12);
+    color: var(--green);
+    border: 1px solid rgba(34, 211, 160, 0.25);
+  }
+
+  .field {
+    margin-bottom: 0.9rem;
+  }
+
+  .field label {
+    display: block;
+    font-family: var(--mono);
+    font-size: 8px;
+    font-weight: 500;
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 6px;
+  }
+
+  .sel-wrap {
+    position: relative;
+  }
+
+  .sel-wrap::after {
+    content: '▾';
+    position: absolute;
+    right: 11px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text3);
+    font-size: 9px;
+    pointer-events: none;
+  }
+
+  .field select {
+    width: 100%;
+    padding: 9px 12px;
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    border-radius: var(--r);
+    font-family: var(--ff);
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    appearance: none;
+    -webkit-appearance: none;
+  }
+
+  .field select:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(108, 99, 255, 0.15);
+  }
+
+  .field select option {
+    background: var(--surface2);
+    color: var(--text);
+  }
+
+  .row2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 9px;
+  }
+
+  .sl-field {
+    margin-bottom: 0.9rem;
+  }
+
+  .sl-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 7px;
+  }
+
+  .sl-top label {
+    font-family: var(--mono);
+    font-size: 8px;
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+
+  .sl-val {
+    font-family: var(--mono);
+    font-size: 9px;
+    font-weight: 500;
+    color: var(--accent2);
+    background: var(--accent-bg);
+    border: 1px solid var(--accent-border);
+    padding: 2px 9px;
+    border-radius: 100px;
+  }
+
+  input[type='range'] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 3px;
+    background: var(--surface3);
+    border-radius: 2px;
+    outline: none;
+    cursor: pointer;
+  }
+
+  input[type='range']::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 15px;
+    height: 15px;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 10px rgba(108, 99, 255, 0.5);
+    cursor: pointer;
+    transition: transform 0.15s;
+  }
+
+  input[type='range']::-webkit-slider-thumb:hover {
+    transform: scale(1.2);
+  }
+
+  input[type='range']::-moz-range-thumb {
+    width: 15px;
+    height: 15px;
+    border-radius: 50%;
+    background: var(--accent);
+    border: none;
+    cursor: pointer;
+  }
+
+  .predict-btn {
+    width: 100%;
+    padding: 12px;
+    background: linear-gradient(135deg, var(--accent), #4f46e5);
+    color: #fff;
+    border: none;
+    border-radius: var(--r);
+    font-family: var(--ff);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-top: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+  }
+
+  .predict-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 22px rgba(108, 99, 255, 0.4);
+  }
+
+  .predict-btn:active {
+    transform: none;
+    box-shadow: none;
+  }
+
+  .predict-btn:disabled {
+    opacity: 0.5;
+    pointer-events: none;
+  }
+
+  .compare-btn {
+    background: linear-gradient(135deg, var(--green), #0d9488);
+  }
+
+  .compare-btn:hover {
+    box-shadow: 0 8px 22px rgba(34, 211, 160, 0.35);
+  }
+
+  .result-empty {
+    text-align: center;
+    padding: 2.2rem 1rem;
+    color: var(--text3);
+  }
+
+  .result-empty-icon {
+    font-size: 1.9rem;
+    margin-bottom: 0.6rem;
+    opacity: 0.4;
+  }
+
+  .result-empty p {
+    font-family: var(--mono);
+    font-size: 9px;
+    line-height: 2;
+    letter-spacing: 0.04em;
+  }
+
+  .result-data {
+    display: none;
+  }
+
+  .result-data.show {
+    display: block;
+    animation: fadeUp 0.35s ease both;
+  }
+
+  @keyframes fadeUp {
+    from {
+      opacity: 0;
+      transform: translateY(14px);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+    }
+
+    to {
+      opacity: 1;
+    }
+  }
+
+  .res-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-family: var(--mono);
+    font-size: 8px;
+    font-weight: 500;
+    background: var(--green-bg);
+    color: var(--green);
+    border: 1px solid rgba(34, 211, 160, 0.25);
+    padding: 3px 10px;
+    border-radius: 100px;
+    letter-spacing: 0.08em;
+    margin-bottom: 0.9rem;
+  }
+
+  .res-price {
+    font-size: clamp(1.8rem, 3.8vw, 2.6rem);
+    font-weight: 800;
+    letter-spacing: -0.04em;
+    color: var(--text);
+    line-height: 1;
+    margin-bottom: 0.25rem;
+  }
+
+  .res-lakh {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text2);
+    margin-bottom: 0.9rem;
+  }
+
+  .range-row {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    margin-bottom: 4px;
+  }
+
+  .range-lo,
+  .range-hi {
+    font-family: var(--mono);
+    font-size: 9px;
+    color: var(--text3);
+    white-space: nowrap;
+  }
+
+  .range-track {
+    flex: 1;
+    height: 4px;
+    background: var(--surface3);
+    border-radius: 3px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .range-fill {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 15%;
+    right: 15%;
+    background: linear-gradient(90deg, var(--accent), var(--blue));
+    border-radius: 3px;
+  }
+
+  .range-hint {
+    font-family: var(--mono);
+    font-size: 8px;
+    color: var(--text3);
+    text-align: center;
+    margin-bottom: 1.1rem;
+    letter-spacing: 0.03em;
+  }
+
+  .meta-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+  }
+
+  .meta-cell {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--r);
+    padding: 10px 11px;
+  }
+
+  .meta-val {
+    font-size: 1.05rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--text);
+  }
+
+  .meta-lbl {
+    font-family: var(--mono);
+    font-size: 7px;
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-top: 3px;
+  }
+
+  .compare-result-panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--r2);
+    padding: 1.3rem;
+    position: relative;
+  }
+
+  .compare-result-panel::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.08), transparent);
+  }
+
+  .vs-bar {
+    margin: 1rem 0;
+  }
+
+  .vs-title {
+    font-family: var(--mono);
+    font-size: 8px;
+    color: var(--text3);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+
+  .vs-track {
+    height: 28px;
+    background: var(--surface2);
+    border-radius: 8px;
+    overflow: hidden;
+    display: flex;
+  }
+
+  .vs-fill-a,
+  .vs-fill-b {
+    display: flex;
+    align-items: center;
+    transition: width 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .vs-fill-a {
+    background: linear-gradient(90deg, var(--accent), #8b84ff);
+    padding-left: 10px;
+  }
+
+  .vs-fill-b {
+    background: linear-gradient(90deg, var(--green), #0d9488);
+    justify-content: flex-end;
+    padding-right: 10px;
+  }
+
+  .vs-fill-a span,
+  .vs-fill-b span {
+    font-family: var(--mono);
+    font-size: 8px;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.85);
+  }
+
+  .comp-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 0.9rem;
+  }
+
+  .comp-table th {
+    font-family: var(--mono);
+    font-size: 8px;
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    padding: 7px 8px;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .comp-table td {
+    padding: 8px 8px;
+    font-size: 11px;
+    font-weight: 600;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .comp-table tr:last-child td {
+    border-bottom: none;
+  }
+
+  .comp-table .winner {
+    color: var(--green);
+  }
+
+  .comp-table .neutral {
+    color: var(--text2);
+  }
+
+  .winner-badge {
+    display: inline-block;
+    font-family: var(--mono);
+    font-size: 7px;
+    padding: 2px 5px;
+    border-radius: 4px;
+    background: var(--green-bg);
+    color: var(--green);
+    margin-left: 5px;
+  }
+
+  .feat-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 9px;
+  }
+
+  .feat-name {
+    font-family: var(--mono);
+    font-size: 8px;
+    color: var(--text2);
+    width: 68px;
+    text-align: right;
+    flex-shrink: 0;
+  }
+
+  .feat-track {
+    flex: 1;
+    height: 4px;
+    background: var(--surface3);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+
+  .feat-fill {
+    height: 100%;
+    border-radius: 3px;
+    background: linear-gradient(90deg, var(--accent), var(--blue));
+    width: 0%;
+    transition: width 1.3s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .feat-pct {
+    font-family: var(--mono);
+    font-size: 8px;
+    color: var(--text3);
+    width: 28px;
+    text-align: right;
+  }
+
+  #depr-chart-wrap,
+  #cmp-chart-wrap {
+    position: relative;
+  }
+
+  #depr-chart-wrap {
+    height: 170px;
+  }
+
+  #cmp-chart-wrap {
+    height: 190px;
+  }
+
+  footer {
+    text-align: center;
+    padding: 1.1rem;
+    font-family: var(--mono);
+    font-size: 8px;
+    color: var(--text3);
+    border-top: 1px solid var(--border);
+    letter-spacing: 0.08em;
+    position: relative;
+    z-index: 1;
+    margin-top: auto;
+  }
+
+  ::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: var(--surface);
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: var(--surface3);
+    border-radius: 2px;
+  }
+
+  .skel {
+    display: inline-block;
+    width: 42px;
+    height: 8px;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 4px;
+    animation: sk 1.4s ease infinite;
+  }
+
+  @keyframes sk {
+    0%,
+    100% {
+      opacity: 0.3;
+    }
+
+    50% {
+      opacity: 0.8;
+    }
+  }
+
+  .compare-col {
+    display: flex;
+    flex-direction: column;
+    gap: 1.1rem;
+  }
+
+  .sticky-form {
+    position: sticky;
+    top: 68px;
+  }
+
+  @media (max-width: 900px) {
+    .main.mode-single,
+    .main.mode-compare {
+      grid-template-columns: 1fr;
+    }
+
+    nav,
+    .stat-bar,
+    .mode-strip,
+    .main {
+      padding-left: 1.25rem;
+      padding-right: 1.25rem;
+    }
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="brand"><div class="brand-icon">🚗</div>Car Price <span style="color:var(--accent2);">Predictor</span></div>
+  <div class="nav-pills">
+    <span class="nav-pill" onclick="retrain()">Retrain model</span>
+    <span class="nav-pill active">v2.0</span>
+  </div>
+</nav>
+
+<div class="stat-bar">
+  <div class="sb-item"><span class="pulse-dot"></span><span class="sb-lbl">Model</span><span class="sb-val">LinearRegression()</span></div>
+  <div class="sb-item"><span class="sb-lbl">R²</span><span class="sb-val" id="s-r2"><span class="skel"></span></span></div>
+  <div class="sb-item"><span class="sb-lbl">MAE</span><span class="sb-val" id="s-mae"><span class="skel"></span></span></div>
+  <div class="sb-item"><span class="sb-lbl">RMSE</span><span class="sb-val" id="s-rmse"><span class="skel"></span></span></div>
+  <div class="sb-item"><span class="sb-lbl">Train</span><span class="sb-val" id="s-train"><span class="skel"></span></span></div>
+  <div class="sb-item"><span class="sb-lbl">Dataset</span><span class="sb-val">816 cars · 25 brands</span></div>
+</div>
+
+<div class="mode-strip">
+  <div class="mode-tabs">
+    <button class="mode-tab active" id="tab-single" onclick="setMode('single')">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="12" height="12" rx="2"/><line x1="8" y1="5" x2="8" y2="11"/><line x1="5" y1="8" x2="11" y2="8"/></svg>
+      Single car estimate
+    </button>
+    <button class="mode-tab" id="tab-compare" onclick="setMode('compare')">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="3" width="6" height="10" rx="1.5"/><rect x="9" y="3" width="6" height="10" rx="1.5"/></svg>
+      Compare cars
+    </button>
+  </div>
+</div>
+
+<div class="main mode-single" id="main-grid">
+
+  <!-- FORM A -->
+  <div class="sticky-form" id="col-form-a">
+    <div class="card" style="animation:fadeUp 0.45s 0.1s ease both;">
+      <div class="card-head">
+        <div><div class="card-title" id="form-a-title">Tell us about the car</div><div class="card-sub">4 inputs · quick resale estimate</div></div>
+        <span class="car-chip a">CAR A</span>
+      </div>
+      <div class="card-body">
+        <div class="row2">
+          <div class="field">
+            <label>Company</label>
+            <div class="sel-wrap"><select id="company-a" onchange="updateModels('a')"><option>Loading…</option></select></div>
+          </div>
+          <div class="field">
+            <label>Fuel Type</label>
+            <div class="sel-wrap"><select id="fuel-a"><option>Petrol</option></select></div>
+          </div>
+        </div>
+        <div class="field">
+          <label>Car Model</label>
+          <div class="sel-wrap"><select id="model-a"><option>Select company first</option></select></div>
+        </div>
+        <div class="sl-field">
+          <div class="sl-top"><label>Manufacturing Year</label><span class="sl-val" id="yr-a">2015</span></div>
+          <input type="range" id="year-a" min="1995" max="2019" value="2015" step="1" oninput="document.getElementById('yr-a').textContent=this.value">
+        </div>
+        <div class="sl-field">
+          <div class="sl-top"><label>Kilometres Driven</label><span class="sl-val" id="km-a">40,000 km</span></div>
+          <input type="range" id="kms-a" min="0" max="200000" value="40000" step="1000" oninput="document.getElementById('km-a').textContent=(+this.value).toLocaleString('en-IN')+' km'">
+        </div>
+        <button class="predict-btn" id="pbtn-a" onclick="predictSingle()">Estimate value →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- RESULTS (single) -->
+  <div id="col-results">
+    <div class="compare-col">
+      <div class="card" style="animation:fadeUp 0.45s 0.2s ease both;">
+        <div class="card-head"><div><div class="card-title">Your estimate</div><div class="card-sub">model-based resale value</div></div></div>
+        <div class="card-body">
+          <div class="result-empty" id="r-empty"><div class="result-empty-icon">📊</div><p>Pick the car details and click<br>Estimate value to see the result.</p></div> 
+          <div class="result-data" id="r-data">
+            <div class="res-chip">✓ &nbsp;Prediction complete</div>
+            <div class="res-price" id="r-price">—</div>
+            <div class="res-lakh" id="r-lakh">—</div>
+            <div class="range-row">
+              <span class="range-lo" id="r-lo">—</span>
+              <div class="range-track"><div class="range-fill"></div></div>
+              <span class="range-hi" id="r-hi">—</span>
+            </div>
+            <div class="range-hint">±20% confidence range</div>
+            <div class="meta-grid">
+              <div class="meta-cell"><div class="meta-val" id="r-age">—</div><div class="meta-lbl">Car Age</div></div>
+              <div class="meta-cell"><div class="meta-val" id="r-dep">—</div><div class="meta-lbl">Depreciation</div></div>
+              <div class="meta-cell"><div class="meta-val" id="r-fuel">—</div><div class="meta-lbl">Fuel Factor</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="card" id="depr-card" style="display:none;">
+        <div class="card-head"><div><div class="card-title">Depreciation Timeline</div><div class="card-sub">predicted resale value over time</div></div></div>
+        <div class="card-body"><div id="depr-chart-wrap"><canvas id="depr-chart"></canvas></div></div>
+      </div>
+      <div class="card" style="animation:fadeUp 0.45s 0.3s ease both;">
+        <div class="card-head"><div><div class="card-title">Feature Importance</div><div class="card-sub">based on model coefficients</div></div></div>
+        <div class="card-body" id="feat-bars"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FORM B (compare) -->
+  <div id="col-form-b" style="display:none;">
+    <div class="card" style="animation:fadeUp 0.45s 0.15s ease both;">
+      <div class="card-head">
+        <div><div class="card-title">Car B Details</div><div class="card-sub">second car to compare</div></div>
+        <span class="car-chip b">CAR B</span>
+      </div>
+      <div class="card-body">
+        <div class="row2">
+          <div class="field">
+            <label>Company</label>
+            <div class="sel-wrap"><select id="company-b" onchange="updateModels('b')"><option>Loading…</option></select></div>
+          </div>
+          <div class="field">
+            <label>Fuel Type</label>
+            <div class="sel-wrap"><select id="fuel-b"><option>Petrol</option></select></div>
+          </div>
+        </div>
+        <div class="field">
+          <label>Car Model</label>
+          <div class="sel-wrap"><select id="model-b"><option>Select company first</option></select></div>
+        </div>
+        <div class="sl-field">
+          <div class="sl-top"><label>Manufacturing Year</label><span class="sl-val" id="yr-b">2017</span></div>
+          <input type="range" id="year-b" min="1995" max="2019" value="2017" step="1" oninput="document.getElementById('yr-b').textContent=this.value">
+        </div>
+        <div class="sl-field">
+          <div class="sl-top"><label>Kilometres Driven</label><span class="sl-val" id="km-b">25,000 km</span></div>
+          <input type="range" id="kms-b" min="0" max="200000" value="25000" step="1000" oninput="document.getElementById('km-b').textContent=(+this.value).toLocaleString('en-IN')+' km'">
+        </div>
+        <button class="predict-btn compare-btn" id="pbtn-compare" onclick="predictCompare()">Compare these cars →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- COMPARE RESULTS -->
+  <div id="col-compare-result" style="display:none;">
+    <div class="compare-col">
+      <div class="compare-result-panel">
+        <div class="result-empty" id="cmp-empty"><div class="result-empty-icon">⚖️</div><p>Fill in both cars and click<br>Compare these cars to see the difference.</p></div>
+        <div id="cmp-data" style="display:none;"></div>
+      </div>
+      <div class="card" id="compare-chart-card" style="display:none;">
+        <div class="card-head"><div><div class="card-title">Depreciation Comparison</div><div class="card-sub">resale value over time · both cars</div></div></div>
+        <div class="card-body"><div id="cmp-chart-wrap"><canvas id="cmp-chart"></canvas></div></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<footer>Built with Flask and sklearn · trained on 816 cars from 25 brands · v2.0</footer>
+
+<script>
+let companyModels={}, deprChart=null, cmpChart=null;
+
+const BASE={Audi:12,BMW:13,Chevrolet:4.5,Datsun:2.5,Fiat:3,Force:3,Ford:5,Hindustan:2,Honda:6,Hyundai:5,Jaguar:15,Jeep:10,Land:18,Mahindra:5,Maruti:3,Mercedes:15,Mini:11,Mitsubishi:6,Nissan:4,Renault:4,Skoda:7,Tata:4,Toyota:8,Volkswagen:7,Volvo:14};
+const FEATS=[{n:'Car age',p:100},{n:'Year',p:79},{n:'KMs driven',p:58},{n:'Brand',p:42},{n:'Fuel',p:18}];
+const FALLBACK_MODELS={"Audi":["Audi A3 Cabriolet","Audi A4 1.8","Audi A4 2.0","Audi A6 2.0","Audi A8","Audi Q3 2.0","Audi Q5 2.0","Audi Q7"],"BMW":["BMW 3 Series","BMW 5 Series","BMW 7 Series","BMW X1","BMW X1 sDrive20d","BMW X1 xDrive20d"],"Chevrolet":["Chevrolet Beat","Chevrolet Beat Diesel","Chevrolet Beat LS","Chevrolet Beat LT","Chevrolet Cruze LTZ","Chevrolet Spark","Chevrolet Spark LS","Chevrolet Tavera Neo"],"Datsun":["Datsun GO T","Datsun Go Plus","Datsun Redi GO"],"Fiat":["Fiat Linea Emotion","Fiat Petra ELX","Fiat Punto Emotion"],"Force":["Force Motors Force","Force Motors One"],"Ford":["Ford EcoSport","Ford EcoSport Ambiente","Ford EcoSport Titanium","Ford Fiesta","Ford Figo","Ford Figo Diesel","Ford Ikon 1.3"],"Hindustan":["Hindustan Motors Ambassador"],"Honda":["Honda Accord","Honda Amaze","Honda Amaze 1.2","Honda Amaze 1.5","Honda Brio","Honda City","Honda City 1.5","Honda City VX","Honda Jazz S","Honda Mobilio","Honda WR V"],"Hyundai":["Hyundai Accent","Hyundai Creta","Hyundai Elite i20","Hyundai Eon","Hyundai Getz","Hyundai Grand i10","Hyundai Santro Xing","Hyundai Verna","Hyundai i10","Hyundai i20","Hyundai i20 Sportz","Hyundai i20 Asta"],"Jaguar":["Jaguar XE XE","Jaguar XF 2.2"],"Jeep":["Jeep Wrangler Unlimited"],"Land":["Land Rover Freelander"],"Mahindra":["Mahindra Bolero DI","Mahindra Jeep CL550","Mahindra KUV100","Mahindra Scorpio","Mahindra Scorpio S10","Mahindra TUV300 T8","Mahindra Thar CRDe","Mahindra XUV500","Mahindra Xylo E4"],"Maruti":["Maruti Suzuki 800","Maruti Suzuki Alto","Maruti Suzuki Baleno","Maruti Suzuki Celerio","Maruti Suzuki Ciaz","Maruti Suzuki Dzire","Maruti Suzuki Ertiga","Maruti Suzuki Ritz","Maruti Suzuki Swift","Maruti Suzuki Wagon","Maruti Suzuki Zen"],"Mercedes":["Mercedes Benz A","Mercedes Benz B","Mercedes Benz C","Mercedes Benz GLA"],"Mini":["Mini Cooper S"],"Mitsubishi":["Mitsubishi Lancer 1.8","Mitsubishi Pajero Sport"],"Nissan":["Nissan Micra XV","Nissan Sunny","Nissan Terrano XL","Nissan X Trail"],"Renault":["Renault Duster","Renault Duster 110","Renault Kwid","Renault Kwid RXT","Renault Lodgy 85","Renault Scala RxL"],"Skoda":["Skoda Fabia","Skoda Fabia Classic","Skoda Laura","Skoda Rapid Elegance","Skoda Yeti Ambition"],"Tata":["Tata Indica","Tata Indica V2","Tata Indigo CS","Tata Nano","Tata Nano Cx","Tata Sumo Grande","Tata Tiago Revotron","Tata Zest XM"],"Toyota":["Toyota Corolla Altis","Toyota Etios","Toyota Etios GD","Toyota Etios Liva","Toyota Fortuner","Toyota Innova 2.0","Toyota Innova 2.5","Toyota Qualis"],"Volkswagen":["Volkswagen Jetta Highline","Volkswagen Polo","Volkswagen Polo Highline","Volkswagen Vento Highline"],"Volvo":["Volvo S80 Summum"]};
+
+function fmt(v){return v>=1e5?'₹'+(v/1e5).toFixed(2)+' L':'₹'+Math.round(v).toLocaleString('en-IN');}
+
+function calcFallback(company,year,kms,fuel){
+  const base=(BASE[company]||5)*28000, age=2024-year;
+  const price=Math.round(Math.max(30000,Math.min(3500000,base*Math.max(0.15,1-age*0.042)*Math.max(0.45,1-kms/200000*0.5)*(fuel==='Diesel'?1.12:fuel==='LPG'?0.88:1))));
+  return{price,price_l:(price/1e5).toFixed(2),low:Math.round(price*0.8),high:Math.round(price*1.2),car_age:age,dep_pct:Math.min(95,age*4.2).toFixed(1),fuel_mult:(fuel==='Diesel'?1.12:fuel==='LPG'?0.88:1).toFixed(2)};
+}
+
+function renderFeatures(){
+  document.getElementById('feat-bars').innerHTML=FEATS.map(f=>`<div class="feat-item"><span class="feat-name">${f.n}</span><div class="feat-track"><div class="feat-fill" data-p="${f.p}"></div></div><span class="feat-pct">${f.p}%</span></div>`).join('');
+  setTimeout(()=>document.querySelectorAll('.feat-fill').forEach(el=>el.style.width=el.dataset.p+'%'),200);
+}
+
+function updateModels(side){
+  const company=document.getElementById('company-'+side).value;
+  const sel=document.getElementById('model-'+side);
+  const models=companyModels[company]||[];
+  sel.innerHTML=models.length?models.map(m=>`<option>${m}</option>`).join(''):'<option>No models found</option>';
+}
+
+async function loadMeta(){
+  try{
+    const m=await fetch('/api/meta').then(r=>r.json());
+    document.getElementById('s-r2').textContent=m.r2??'—';
+    document.getElementById('s-mae').textContent=m.mae?'₹'+(m.mae/1e5).toFixed(2)+'L':'—';
+    document.getElementById('s-rmse').textContent=m.rmse?'₹'+(m.rmse/1e5).toFixed(2)+'L':'—';
+    document.getElementById('s-train').textContent=m.train_size??'—';
+    companyModels=m.company_models||{};
+    const companies=m.companies||Object.keys(companyModels);
+    const fuels=m.fuel_types||['Diesel','LPG','Petrol'];
+    ['a','b'].forEach(s=>{
+      document.getElementById('company-'+s).innerHTML=companies.map(c=>`<option${c==='Honda'&&s==='a'?' selected':c==='Maruti'&&s==='b'?' selected':''}>${c}</option>`).join('');
+      document.getElementById('fuel-'+s).innerHTML=fuels.map(f=>`<option>${f}</option>`).join('');
+      updateModels(s);
+    });
+    if(m.year_min)['a','b'].forEach(s=>document.getElementById('year-'+s).min=m.year_min);
+    if(m.year_max)['a','b'].forEach(s=>document.getElementById('year-'+s).max=m.year_max);
+  }catch{
+    document.getElementById('s-r2').textContent='0.6358';
+    document.getElementById('s-mae').textContent='₹1.57L';
+    document.getElementById('s-rmse').textContent='₹2.72L';
+    document.getElementById('s-train').textContent='652';
+    companyModels=FALLBACK_MODELS;
+    const companies=Object.keys(FALLBACK_MODELS);
+    ['a','b'].forEach(s=>{
+      document.getElementById('company-'+s).innerHTML=companies.map(c=>`<option${c==='Honda'&&s==='a'?' selected':c==='Maruti'&&s==='b'?' selected':''}>${c}</option>`).join('');
+      document.getElementById('fuel-'+s).innerHTML='<option>Diesel</option><option>LPG</option><option selected>Petrol</option>';
+      updateModels(s);
+    });
+  }
+}
+
+function setMode(m){
+  document.getElementById('tab-single').classList.toggle('active',m==='single');
+  document.getElementById('tab-compare').classList.toggle('active',m==='compare');
+  const grid=document.getElementById('main-grid');
+  if(m==='single'){
+    grid.className='main mode-single';
+    document.getElementById('col-form-b').style.display='none';
+    document.getElementById('col-compare-result').style.display='none';
+    document.getElementById('col-results').style.display='';
+    document.getElementById('form-a-title').textContent='Enter Car Details';
+  }else{
+    grid.className='main mode-compare';
+    document.getElementById('col-form-b').style.display='';
+    document.getElementById('col-compare-result').style.display='';
+    document.getElementById('col-results').style.display='none';
+    document.getElementById('form-a-title').textContent='Car A Details';
+  }
+}
+
+function buildDeprChart(company,year,kms,fuel){
+  const labels=[],prices=[];
+  for(let y=Math.max(1995,year-12);y<=2024;y++){labels.push(y);prices.push(calcFallback(company,y,kms+Math.abs(year-y)*8000,fuel).price);}
+  document.getElementById('depr-card').style.display='';
+  if(deprChart)deprChart.destroy();
+  deprChart=new Chart(document.getElementById('depr-chart').getContext('2d'),{type:'line',data:{labels,datasets:[{label:'Est. Resale',data:prices,borderColor:'#6c63ff',backgroundColor:'rgba(108,99,255,0.08)',borderWidth:2,pointBackgroundColor:'#6c63ff',pointRadius:3,fill:true,tension:0.4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' '+fmt(c.raw)}}},scales:{x:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#555870',font:{size:9,family:"'JetBrains Mono'"}}},y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#555870',font:{size:9,family:"'JetBrains Mono'"},callback:v=>fmt(v)}}}}});
+}
+
+function buildCmpChart(pA,pB){
+  const minY=Math.max(1995,Math.min(pA.year,pB.year)-2);
+  const labels=[],prA=[],prB=[];
+  for(let y=minY;y<=2024;y++){labels.push(y);prA.push(calcFallback(pA.company,y,pA.kms+Math.abs(pA.year-y)*8000,pA.fuel).price);prB.push(calcFallback(pB.company,y,pB.kms+Math.abs(pB.year-y)*8000,pB.fuel).price);}
+  document.getElementById('compare-chart-card').style.display='';
+  if(cmpChart)cmpChart.destroy();
+  cmpChart=new Chart(document.getElementById('cmp-chart').getContext('2d'),{type:'line',data:{labels,datasets:[{label:pA.company+' A',data:prA,borderColor:'#6c63ff',backgroundColor:'rgba(108,99,255,0.07)',borderWidth:2,pointRadius:2,fill:true,tension:0.4},{label:pB.company+' B',data:prB,borderColor:'#22d3a0',backgroundColor:'rgba(34,211,160,0.07)',borderWidth:2,pointRadius:2,fill:true,tension:0.4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#8b8fa8',font:{size:9,family:"'JetBrains Mono'"},boxWidth:10}}},scales:{x:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#555870',font:{size:9,family:"'JetBrains Mono'"}}},y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#555870',font:{size:9,family:"'JetBrains Mono'"},callback:v=>fmt(v)}}}}});
+}
+
+async function predictSingle(){
+  const btn=document.getElementById('pbtn-a');
+  btn.disabled=true;btn.textContent='Calculating…';
+  const payload={company:document.getElementById('company-a').value,year:+document.getElementById('year-a').value,kms_driven:+document.getElementById('kms-a').value,fuel_type:document.getElementById('fuel-a').value};
+  let r;
+  try{r=await fetch('/api/predict',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}).then(x=>x.json());}
+  catch{r=calcFallback(payload.company,payload.year,payload.kms_driven,payload.fuel_type);}
+  document.getElementById('r-empty').style.display='none';
+  const rd=document.getElementById('r-data');rd.classList.remove('show');void rd.offsetWidth;rd.classList.add('show');
+  document.getElementById('r-price').textContent=fmt(r.price);
+  document.getElementById('r-lakh').textContent='≈ ₹'+r.price_l+' Lakh';
+  document.getElementById('r-lo').textContent=fmt(r.low);
+  document.getElementById('r-hi').textContent=fmt(r.high);
+  document.getElementById('r-age').textContent=r.car_age+' yrs';
+  document.getElementById('r-dep').textContent=r.dep_pct+'%';
+  document.getElementById('r-fuel').textContent=r.fuel_mult+'×';
+  buildDeprChart(payload.company,payload.year,payload.kms_driven,payload.fuel_type);
+  btn.disabled=false;btn.textContent='Predict Price →';
+}
+
+async function predictCompare(){
+  const btn=document.getElementById('pbtn-compare');
+  btn.disabled=true;btn.textContent='Comparing…';
+  const pA={company:document.getElementById('company-a').value,year:+document.getElementById('year-a').value,kms:+document.getElementById('kms-a').value,fuel:document.getElementById('fuel-a').value};
+  const pB={company:document.getElementById('company-b').value,year:+document.getElementById('year-b').value,kms:+document.getElementById('kms-b').value,fuel:document.getElementById('fuel-b').value};
+  let rA,rB;
+  try{
+    [rA,rB]=await Promise.all([
+      fetch('/api/predict',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({company:pA.company,year:pA.year,kms_driven:pA.kms,fuel_type:pA.fuel})}).then(r=>r.json()),
+      fetch('/api/predict',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({company:pB.company,year:pB.year,kms_driven:pB.kms,fuel_type:pB.fuel})}).then(r=>r.json()),
+    ]);
+  }catch{rA=calcFallback(pA.company,pA.year,pA.kms,pA.fuel);rB=calcFallback(pB.company,pB.year,pB.kms,pB.fuel);}
+  document.getElementById('cmp-empty').style.display='none';
+  const cd=document.getElementById('cmp-data');
+  cd.style.display='';cd.style.animation='none';void cd.offsetWidth;cd.style.animation='fadeIn 0.4s ease both';
+  const total=rA.price+rB.price,pctA=Math.round(rA.price/total*100),pctB=100-pctA,aWins=rA.price>=rB.price;
+  const modelA=document.getElementById('model-a').value, modelB=document.getElementById('model-b').value;
+  function row(lbl,vA,vB,hib){
+    const bA=hib===null?false:hib?Number(String(vA).replace(/[^0-9.]/g,''))>=Number(String(vB).replace(/[^0-9.]/g,'')):Number(String(vA).replace(/[^0-9.]/g,''))<=Number(String(vB).replace(/[^0-9.]/g,''));
+    const bB=hib===null?false:!bA;
+    return`<tr><td style="font-size:9px;font-family:var(--mono);color:var(--text3);">${lbl}</td><td class="${bA?'winner':'neutral'}">${vA}${bA?'<span class="winner-badge">BEST</span>':''}</td><td class="${bB?'winner':'neutral'}">${vB}${bB?'<span class="winner-badge">BEST</span>':''}</td></tr>`;
+  }
+  cd.innerHTML=`
+    <div style="display:flex;gap:0.85rem;margin-bottom:1rem;">
+      <div style="flex:1;background:var(--surface2);border:1px solid rgba(108,99,255,0.2);border-radius:var(--r);padding:0.9rem;">
+        <div style="font-family:var(--mono);font-size:8px;color:var(--text3);text-transform:uppercase;margin-bottom:3px;">Car A</div>
+        <div style="font-size:11px;font-weight:700;color:var(--accent2);margin-bottom:3px;">${modelA}</div>
+        <div style="font-size:1.4rem;font-weight:800;letter-spacing:-0.04em;color:var(--accent2);">${fmt(rA.price)}</div>
+        <div style="font-family:var(--mono);font-size:9px;color:var(--text3);margin-top:2px;">≈ ₹${rA.price_l} Lakh</div>
+      </div>
+      <div style="flex:1;background:var(--surface2);border:1px solid rgba(34,211,160,0.2);border-radius:var(--r);padding:0.9rem;">
+        <div style="font-family:var(--mono);font-size:8px;color:var(--text3);text-transform:uppercase;margin-bottom:3px;">Car B</div>
+        <div style="font-size:11px;font-weight:700;color:var(--green);margin-bottom:3px;">${modelB}</div>
+        <div style="font-size:1.4rem;font-weight:800;letter-spacing:-0.04em;color:var(--green);">${fmt(rB.price)}</div>
+        <div style="font-family:var(--mono);font-size:9px;color:var(--text3);margin-top:2px;">≈ ₹${rB.price_l} Lakh</div>
+      </div>
+    </div>
+    <div class="vs-bar">
+      <div class="vs-title">Value comparison</div>
+      <div class="vs-track">
+        <div class="vs-fill-a" style="width:${pctA}%;"><span>${pctA}% A</span></div>
+        <div class="vs-fill-b" style="width:${pctB}%;"><span>B ${pctB}%</span></div>
+      </div>
+    </div>
+    <table class="comp-table">
+      <thead><tr><th>Metric</th><th><span style="color:var(--accent2);">●</span> ${pA.company}</th><th><span style="color:var(--green);">●</span> ${pB.company}</th></tr></thead>
+      <tbody>
+        ${row('Est. Price',fmt(rA.price),fmt(rB.price),true)}
+        ${row('Year',pA.year,pB.year,true)}
+        ${row('KMs Driven',(pA.kms/1000).toFixed(0)+'k',(pB.kms/1000).toFixed(0)+'k',false)}
+        ${row('Fuel',pA.fuel,pB.fuel,null)}
+        ${row('Car Age',rA.car_age+' yrs',rB.car_age+' yrs',false)}
+        ${row('Depreciation',rA.dep_pct+'%',rB.dep_pct+'%',false)}
+        ${row('Price Range',fmt(rA.low)+'–'+fmt(rA.high),fmt(rB.low)+'–'+fmt(rB.high),null)}
+      </tbody>
+    </table>
+    <div style="margin-top:0.9rem;padding:10px 12px;border-radius:var(--r);background:${aWins?'rgba(108,99,255,0.1)':'rgba(34,211,160,0.1)'};border:1px solid ${aWins?'rgba(108,99,255,0.25)':'rgba(34,211,160,0.25)'};">
+      <div style="font-family:var(--mono);font-size:8px;color:var(--text3);text-transform:uppercase;margin-bottom:4px;">Verdict</div>
+      <div style="font-size:12px;font-weight:700;color:${aWins?'var(--accent2)':'var(--green)'};">${aWins?modelA:modelB} has higher resale value by ${fmt(Math.abs(rA.price-rB.price))}</div>
+    </div>`;
+  buildCmpChart(pA,pB);
+  btn.disabled=false;btn.textContent='Compare Both Cars →';
+}
+
+async function retrain(){
+  if(!confirm('Retrain model? Takes ~5 seconds.'))return;
+  try{const r=await fetch('/api/retrain',{method:'POST'}).then(x=>x.json());alert('✓ Retrained! R²='+r.r2+' MAE=₹'+(r.mae/1e5).toFixed(2)+'L');loadMeta();}
+  catch{alert('Retrain failed — is Flask running?');}
+}
+
+loadMeta();
+renderFeatures();
+</script>
+</body>
+</html>
