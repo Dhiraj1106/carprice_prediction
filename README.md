@@ -153,7 +153,7 @@ python car_price_prediction.py
 ## 🙌 Author
 
 **Dhiraj Sarangi**
-BCA Student | Aspiring MERN & ML Developer
+BCA Student | Aspiring Java Fullstack Devloper
 
 ---
 
